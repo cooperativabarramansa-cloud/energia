@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Controle de Ponta · Manutenção · Cooperativa BM</title>
+<script>
+  if (typeof Chart === 'undefined') {
+    document.write('<scr'+'ipt src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"><\/scr'+'ipt>');
+  }
+</script>
+<script src="chart.min.js" onerror="this.remove()"></script>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>/* fallback se fonte não carregar */
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@400;700;800;900&display=swap');
+</style>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:    #060a0f;
+  --panel: rgba(10,18,32,0.88);
+  --panel2:rgba(7,13,24,0.95);
+  --border:rgba(255,255,255,0.06);
+  --bord2: rgba(255,255,255,0.11);
+  --green: #00e676;
+  --cyan:  #00bcd4;
+  --amber: #ffb300;
+  --red:   #ff1744;
+  --blue:  #448aff;
+  --muted: #546e8a;
+  --txt:   #e0eaf8;
+}
+html,body{width:100%;height:100%;overflow:hidden;
+  background:var(--bg);
+  font-family:'Exo 2','Segoe UI','Arial',sans-serif,'Segoe UI','Arial',sans-serif;
+  color:var(--txt)}
+
+/* BG */
+body::before{content:'';position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 10% 10%, rgba(0,230,118,0.055) 0%,transparent 55%),
+    radial-gradient(ellipse 60% 50% at 90% 85%, rgba(0,188,212,0.045) 0%,transparent 55%),
+    linear-gradient(170deg,#050810 0%,#060a0f 60%,#040810 100%);
+  pointer-events:none}
+body::after{content:'';position:fixed;inset:0;z-index:0;
+  background-image:
+    linear-gradient(rgba(0,230,118,0.018) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,230,118,0.018) 1px,transparent 1px);
+  background-size:48px 48px;pointer-events:none}
+
+#app{position:relative;z-index:1;width:100vw;height:100vh;
+  display:flex;flex-direction:column}
+
+/* ══ HEADER ══ */
+header{
+  height:62px;min-height:62px;padding:0 1.8rem;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(4,8,18,0.92);
+  border-bottom:1px solid var(--bord2);
+  backdrop-filter:blur(14px);
+  position:relative;overflow:hidden;
+}
+header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent 0%,var(--green) 30%,var(--cyan) 70%,transparent 100%);
+  animation:hline 5s linear infinite}
+@keyframes hline{0%{opacity:.4}50%{opacity:1}100%{opacity:.4}}
+
+.hbrand{display:flex;align-items:center;gap:.9rem}
+.hicon{width:38px;height:38px;border-radius:9px;
+  background:linear-gradient(135deg,var(--green),var(--cyan));
+  display:flex;align-items:center;justify-content:center;font-size:1.2rem;
+  box-shadow:0 0 16px rgba(0,230,118,0.35);
+  animation:glow-icon 2.5s ease-in-out infinite}
+@keyframes glow-icon{0%,100%{box-shadow:0 0 12px rgba(0,230,118,0.3)}
+  50%{box-shadow:0 0 28px rgba(0,230,118,0.65)}}
+.hname h1{font-size:1.1rem;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;
+  background:linear-gradient(90deg,var(--green),var(--cyan));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hname p{font-size:.65rem;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-top:1px}
+
+/* header KPIs */
+.hkpis{display:flex;align-items:center;gap:1.6rem}
+.hkpi{text-align:center}
+.hkpi .v{font-size:1.3rem;font-weight:800;line-height:1}
+.hkpi .l{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-top:2px}
+.hsep{width:1px;height:28px;background:var(--bord2)}
+
+.hright{display:flex;align-items:center;gap:1rem}
+.hclock{font-size:1.5rem;font-weight:800;letter-spacing:2px;
+  color:var(--cyan);text-shadow:0 0 12px rgba(0,188,212,0.4)}
+.hdate{font-size:.62rem;color:var(--muted);text-align:right;line-height:1.5}
+.live{width:9px;height:9px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 7px var(--green);animation:blink 1.3s ease infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+
+/* ══ PROGRESS ══ */
+.pgbar{height:3px;background:rgba(255,255,255,0.05)}
+.pgfill{height:100%;width:0%;transition:width .1s linear;
+  background:linear-gradient(90deg,var(--green),var(--cyan));
+  box-shadow:0 0 5px var(--green)}
+
+/* ══ MAIN ══ */
+main{flex:1;overflow:hidden;display:flex;flex-direction:column;
+  padding:.7rem 1.2rem;gap:.7rem}
+
+/* ══ VIEWS ══ */
+.view{display:none;flex-direction:column;gap:.7rem;height:100%;
+  animation:fin .6s ease}
+.view.active{display:flex}
+@keyframes fin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ══ CARDS ══ */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;
+  backdrop-filter:blur(8px);padding:.9rem 1.1rem;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--green) 40%,var(--cyan) 60%,transparent);
+  opacity:.4}
+.ctitle{font-size:.72rem;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:.65rem;display:flex;align-items:center;gap:.4rem}
+.ctitle span{color:var(--green)}
+
+/* ══ VIEW 1 — PLACAR DO DIA / KPIs PONTA ══ */
+.kpi4{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem}
+.kpi{background:var(--panel2);border:1px solid var(--border);border-radius:11px;
+  padding:.85rem 1rem;position:relative;overflow:hidden}
+.kpi-ico{font-size:1.3rem;margin-bottom:.35rem}
+.kpi-val{font-size:1.85rem;font-weight:900;line-height:1;margin-bottom:.2rem}
+.kpi-lbl{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+.kpi-sub{font-size:.68rem;margin-top:.28rem;opacity:.65}
+.kv-green .kpi-val{color:var(--green);text-shadow:0 0 14px rgba(0,230,118,0.4)}
+.kv-green{border-color:rgba(0,230,118,0.2)}
+.kv-amber .kpi-val{color:var(--amber);text-shadow:0 0 14px rgba(255,179,0,0.4)}
+.kv-amber{border-color:rgba(255,179,0,0.2)}
+.kv-red .kpi-val{color:var(--red);text-shadow:0 0 14px rgba(255,23,68,0.4)}
+.kv-red{border-color:rgba(255,23,68,0.2)}
+.kv-cyan .kpi-val{color:var(--cyan);text-shadow:0 0 14px rgba(0,188,212,0.4)}
+.kv-cyan{border-color:rgba(0,188,212,0.2)}
+
+/* gauge ponta */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:.5rem 0;gap:.5rem}
+.gauge-arc{position:relative;width:130px;height:75px;overflow:hidden;margin:0 auto}
+.gauge-arc svg{width:130px;height:75px}
+.gauge-val-center{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);
+  font-size:1.6rem;font-weight:900;white-space:nowrap;text-align:center;line-height:1}
+.gauge-label{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.gauge-meta{font-size:.65rem;margin-top:2px}
+
+/* ══ VIEW 2 — TABELA DIÁRIA ══ */
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+thead th{font-size:.67rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted);padding:.5rem .7rem;border-bottom:1px solid var(--bord2);text-align:center}
+thead th:first-child{text-align:left}
+tbody tr{border-bottom:1px solid rgba(255,255,255,0.035);
+  opacity:0;animation:rowin .35s ease forwards}
+tbody tr:hover{background:rgba(0,230,118,0.03)}
+@keyframes rowin{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+tbody td{padding:.5rem .7rem;text-align:center}
+tbody td:first-child{text-align:left;font-weight:700;color:var(--cyan);font-size:.82rem}
+tbody td:nth-child(2){color:var(--muted);font-size:.72rem}
+.vn{font-weight:800;font-size:.88rem}
+
+.bdg{display:inline-block;padding:.13rem .5rem;border-radius:20px;
+  font-size:.62rem;font-weight:700;letter-spacing:.4px;text-transform:uppercase}
+.bdg.max{background:rgba(0,230,118,0.14);color:var(--green);border:1px solid rgba(0,230,118,0.28)}
+.bdg.otim{background:rgba(0,188,212,0.12);color:var(--cyan);border:1px solid rgba(0,188,212,0.25)}
+.bdg.desvio{background:rgba(255,179,0,0.13);color:var(--amber);border:1px solid rgba(255,179,0,0.28)}
+.bdg.alerta{background:rgba(255,23,68,0.14);color:var(--red);border:1px solid rgba(255,23,68,0.28)}
+
+tr.trow td{font-weight:800;font-size:.88rem;color:var(--green);
+  padding:.65rem .7rem;border-top:2px solid rgba(0,230,118,0.25);border-bottom:none}
+
+/* ══ VIEW 3 — GRÁFICO % PONTA ══ */
+.v3grid{display:grid;grid-template-columns:3fr 2fr;gap:.7rem;height:100%}
+.meta-cards{display:flex;flex-direction:column;gap:.7rem}
+.mcard{background:var(--panel2);border-radius:11px;padding:.9rem 1rem;
+  border:1px solid var(--border);text-align:center}
+.mcard .mv{font-size:2rem;font-weight:900;line-height:1;margin:.25rem 0 .15rem}
+.mcard .ml{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.mcard .ms{font-size:.68rem;margin-top:.25rem;opacity:.6}
+.mcard.green{border-color:rgba(0,230,118,0.25)}
+.mcard.green .mv{color:var(--green);text-shadow:0 0 16px rgba(0,230,118,0.4)}
+.mcard.amber{border-color:rgba(255,179,0,0.25)}
+.mcard.amber .mv{color:var(--amber);text-shadow:0 0 16px rgba(255,179,0,0.4)}
+.mcard.red{border-color:rgba(255,23,68,0.22)}
+.mcard.red .mv{color:var(--red);text-shadow:0 0 16px rgba(255,23,68,0.35)}
+
+/* ══ VIEW 4 — RANKING DE PERFORMANCE ══ */
+.rank-grid{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;height:100%}
+.rank-list{display:flex;flex-direction:column;gap:.38rem;overflow-y:auto}
+.ritem{display:flex;align-items:center;gap:.6rem;
+  background:var(--panel2);border-radius:9px;padding:.45rem .7rem;
+  border:1px solid var(--border);
+  opacity:0;animation:rowin .35s ease forwards}
+.rnum{font-size:.75rem;font-weight:800;color:var(--muted);min-width:20px;text-align:center}
+.rdate{font-weight:800;font-size:.82rem;color:var(--cyan);min-width:38px}
+.rday{font-size:.68rem;color:var(--muted);min-width:58px}
+.rponta{font-weight:800;font-size:.82rem;min-width:72px;text-align:right}
+.rpct{font-size:.72rem;min-width:44px;text-align:right;font-weight:700}
+.rbar{flex:1;height:7px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden}
+.rbarfill{height:100%;border-radius:3px;transition:width 1.4s ease}
+
+/* ══ NAV DOTS ══ */
+.navdots{display:flex;justify-content:center;align-items:center;gap:.55rem;padding:.35rem 0 .15rem}
+.dot{width:26px;height:4px;border-radius:2px;background:rgba(255,255,255,0.1);
+  transition:all .35s ease;cursor:pointer}
+.dot.active{background:var(--green);box-shadow:0 0 7px var(--green);width:40px}
+
+/* ══ BTN PAUSE ══ */
+.btn-pause{display:flex;align-items:center;gap:.4rem;padding:.28rem .75rem;border-radius:18px;
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  color:var(--muted);font-family:'Exo 2','Segoe UI','Arial',sans-serif,'Segoe UI','Arial',sans-serif;font-size:.72rem;font-weight:700;
+  letter-spacing:.6px;text-transform:uppercase;cursor:pointer;transition:all .22s ease}
+.btn-pause:hover{background:rgba(0,230,118,0.09);border-color:rgba(0,230,118,0.28);color:var(--green)}
+.btn-pause.paused{background:rgba(255,179,0,0.1);border-color:rgba(255,179,0,0.38);
+  color:var(--amber);animation:ppulse 1.8s ease infinite}
+@keyframes ppulse{0%,100%{box-shadow:0 0 6px rgba(255,179,0,0.15)}50%{box-shadow:0 0 16px rgba(255,179,0,0.4)}}
+
+/* ══ TICKER ══ */
+.ticker{height:26px;background:rgba(0,230,118,0.05);
+  border-top:1px solid rgba(0,230,118,0.12);
+  overflow:hidden;display:flex;align-items:center;padding:0 .8rem;
+  font-size:.67rem;color:var(--green);letter-spacing:.4px}
+.ticker-in{white-space:nowrap;animation:tick 45s linear infinite}
+@keyframes tick{0%{transform:translateX(100vw)}100%{transform:translateX(-100%)}}
+
+/* ══ PARTICLE ══ */
+.pt{position:fixed;pointer-events:none;border-radius:50%;animation:fup linear infinite;opacity:0}
+@keyframes fup{0%{transform:translateY(0) scale(1);opacity:.35}100%{transform:translateY(-100vh) scale(.1);opacity:0}}
+
+/* ══ SHIMMER ══ */
+@keyframes shimmer{0%,100%{opacity:.5}50%{opacity:1}}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HEADER -->
+<header>
+  <div class="hbrand">
+    <div class="hicon">⚡</div>
+    <div class="hname">
+      <h1>Controle de Horário de Ponta</h1>
+      <p>Equipe de Manutenção · Cooperativa BM · Maio 2026</p>
+    </div>
+  </div>
+  <div class="hkpis">
+    <div class="hkpi">
+      <div class="v" style="color:var(--green)">10.700 kWh</div>
+      <div class="l">Ponta Real · 01–17/05</div>
+    </div>
+    <div class="hsep"></div>
+    <div class="hkpi">
+      <div class="v" style="color:var(--amber)">17.397 kWh</div>
+      <div class="l">Meta máx. ponta (9%)</div>
+    </div>
+    <div class="hsep"></div>
+    <div class="hkpi">
+      <div class="v" style="color:var(--green)">5,54%</div>
+      <div class="l">% ponta · 🏆 recorde</div>
+    </div>
+    <div class="hsep"></div>
+    <div class="hkpi">
+      <div class="v" style="color:var(--green)">R$ 8.894</div>
+      <div class="l">Economia gerada pela equipe</div>
+    </div>
+  </div>
+  <div class="hright">
+    <div>
+      <div class="hclock" id="clock">--:--:--</div>
+      <div class="hdate" id="datedisp">--</div>
+    </div>
+    <div class="live"></div>
+  </div>
+</header>
+
+<div class="pgbar"><div class="pgfill" id="pgfill"></div></div>
+
+<main>
+
+  <!-- VIEW 1: HERO DASHBOARD -->
+  <div class="view active" id="v1">
+
+    <!-- LINHA SUPERIOR: MÉTRICA HERO + 3 KPIs SECUNDÁRIOS -->
+    <div style="display:grid;grid-template-columns:1.15fr 1fr 1fr 1fr;gap:.7rem">
+
+      <!-- HERO — % PONTA (destaque máximo) -->
+      <div style="background:var(--panel2);border:1px solid rgba(0,230,118,0.28);border-radius:14px;
+        padding:1rem 1.2rem;position:relative;overflow:hidden;
+        box-shadow:0 0 32px rgba(0,230,118,0.08),inset 0 1px 0 rgba(0,230,118,0.12)">
+        <!-- glow de fundo -->
+        <div style="position:absolute;top:-20px;right:-20px;width:120px;height:120px;border-radius:50%;
+          background:radial-gradient(circle,rgba(0,230,118,0.12) 0%,transparent 70%);pointer-events:none"></div>
+        <div style="font-size:.62rem;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;
+          color:var(--muted);margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--green);
+            box-shadow:0 0 6px var(--green);display:inline-block;animation:blink 1.3s ease infinite"></span>
+          % Consumo no Horário de Ponta · Maio 2026
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:.5rem;margin-bottom:.4rem">
+          <div style="font-size:3.8rem;font-weight:900;line-height:1;
+            color:var(--green);text-shadow:0 0 30px rgba(0,230,118,0.55);
+            font-family:'Exo 2','Segoe UI','Arial',sans-serif,'Segoe UI','Arial',sans-serif">5,54%</div>
+          <div style="margin-bottom:.5rem">
+            <div style="font-size:.68rem;color:var(--muted);line-height:1.4">
+              Meta: &lt; 9%<br>
+              <span style="color:var(--green);font-weight:700">▼ 3,46 p.p. abaixo</span>
+            </div>
+          </div>
+        </div>
+        <!-- barra comparativa real vs meta -->
+        <div style="margin-top:.4rem">
+          <div style="display:flex;justify-content:space-between;font-size:.62rem;color:var(--muted);margin-bottom:.3rem">
+            <span>Real: 10.700 kWh</span><span>Meta máx.: 17.397 kWh</span>
+          </div>
+          <div style="height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;position:relative">
+            <div id="bar-real" style="height:100%;width:0%;border-radius:4px;
+              background:linear-gradient(90deg,var(--green),#00ff87);
+              box-shadow:0 0 8px rgba(0,230,118,0.5);transition:width 1.6s ease"></div>
+            <!-- marcador de meta -->
+            <div style="position:absolute;top:0;bottom:0;left:61.5%;width:2px;
+              background:rgba(255,179,0,0.6);border-radius:1px"></div>
+          </div>
+          <div style="font-size:.6rem;color:rgba(255,179,0,0.7);margin-top:.25rem;text-align:right">
+            ▲ Limite 9%
+          </div>
+        </div>
+        <!-- badge recorde -->
+        <div style="display:inline-flex;align-items:center;gap:.35rem;margin-top:.5rem;
+          background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.3);
+          border-radius:20px;padding:.2rem .65rem;font-size:.65rem;font-weight:800;
+          color:var(--green);letter-spacing:.4px">
+          🏆 MENOR % HISTÓRICO · JAN–MAI 2026
+        </div>
+      </div>
+
+      <!-- KPI 2: kWh deslocados -->
+      <div style="background:var(--panel2);border:1px solid rgba(0,188,212,0.2);border-radius:14px;
+        padding:1rem 1.1rem;position:relative;overflow:hidden;
+        box-shadow:inset 0 1px 0 rgba(0,188,212,0.08)">
+        <div style="position:absolute;bottom:-15px;left:-15px;width:90px;height:90px;border-radius:50%;
+          background:radial-gradient(circle,rgba(0,188,212,0.1) 0%,transparent 70%);pointer-events:none"></div>
+        <div style="font-size:.6rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+          color:var(--muted);margin-bottom:.5rem">kWh Deslocados da Ponta</div>
+        <div style="font-size:2.5rem;font-weight:900;line-height:1;
+          color:var(--cyan);text-shadow:0 0 20px rgba(0,188,212,0.4);
+          font-family:'Exo 2','Segoe UI','Arial',sans-serif,'Segoe UI','Arial',sans-serif" class="count-up" data-target="6697" data-suffix=" kWh">0</div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:.35rem;line-height:1.5">
+          Resultado direto<br>
+          <span style="color:var(--cyan);font-weight:700">do trabalho da equipe</span>
+        </div>
+        <div style="margin-top:.6rem;height:3px;background:rgba(255,255,255,0.05);border-radius:2px">
+          <div style="height:100%;width:100%;border-radius:2px;
+            background:linear-gradient(90deg,var(--cyan),rgba(0,188,212,0.3));
+            animation:shimmer 2.5s ease-in-out infinite"></div>
+        </div>
+      </div>
+
+      <!-- KPI 3: Economia gerada -->
+      <div style="background:var(--panel2);border:1px solid rgba(0,230,118,0.18);border-radius:14px;
+        padding:1rem 1.1rem;position:relative;overflow:hidden">
+        <div style="font-size:.6rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+          color:var(--muted);margin-bottom:.5rem">Economia Gerada pela Equipe</div>
+        <div style="font-size:2.5rem;font-weight:900;line-height:1;
+          color:var(--green);text-shadow:0 0 20px rgba(0,230,118,0.4);
+          font-family:'Exo 2','Segoe UI','Arial',sans-serif,'Segoe UI','Arial',sans-serif">R$ 8.894</div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:.35rem;line-height:1.5">
+          6.697 kWh deslocados<br>
+          <span style="color:var(--green);font-weight:700">× R$ 1,359 por kWh</span>
+        </div>
+        <div style="margin-top:.55rem;display:flex;align-items:center;gap:.3rem">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--green);
+            box-shadow:0 0 5px var(--green)"></div>
+          <span style="font-size:.62rem;color:var(--muted)">Tarifa diferencial de ponta</span>
+        </div>
+      </div>
+
+      <!-- KPI 4: Ponta real -->
+      <div style="background:var(--panel2);border:1px solid rgba(255,179,0,0.18);border-radius:14px;
+        padding:1rem 1.1rem;position:relative;overflow:hidden">
+        <div style="font-size:.6rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+          color:var(--muted);margin-bottom:.5rem">Consumo na Ponta · 01–17/05</div>
+        <div style="font-size:2.5rem;font-weight:900;line-height:1;
+          color:var(--amber);text-shadow:0 0 20px rgba(255,179,0,0.38);
+          font-family:'Exo 2','Segoe UI','Arial',sans-serif,'Segoe UI','Arial',sans-serif" class="count-up" data-target="10700" data-suffix=" kWh">0</div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:.35rem;line-height:1.5">
+          Meta máxima: 17.397 kWh<br>
+          <span style="color:var(--amber);font-weight:700">38,5% abaixo da meta ✓</span>
+        </div>
+        <div style="margin-top:.55rem;display:flex;align-items:center;gap:.3rem">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--amber);
+            box-shadow:0 0 5px var(--amber)"></div>
+          <span style="font-size:.62rem;color:var(--muted)">Período parcial 17/31 dias</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LINHA INFERIOR: PLACAR + GRÁFICO -->
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:.7rem;flex:1;min-height:0">
+
+      <!-- PLACAR 4 CATEGORIAS -->
+      <div style="background:var(--panel2);border:1px solid var(--border);border-radius:14px;
+        padding:.85rem 1rem;display:flex;flex-direction:column;gap:.5rem;min-width:220px">
+        <div style="font-size:.65rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+          color:var(--muted);margin-bottom:.1rem;border-bottom:1px solid var(--border);padding-bottom:.4rem">
+          📅 Placar · 17 Dias
+        </div>
+        <!-- cada linha do placar -->
+        <div style="display:flex;align-items:center;gap:.7rem;padding:.45rem .6rem;border-radius:9px;
+          background:rgba(0,230,118,0.07);border:1px solid rgba(0,230,118,0.15)">
+          <div style="font-size:2rem;font-weight:900;color:var(--green);
+            text-shadow:0 0 15px rgba(0,230,118,0.5);min-width:28px;text-align:center;
+            font-family:'Exo 2','Segoe UI','Arial',sans-serif,'Segoe UI','Arial',sans-serif">7</div>
+          <div>
+            <div style="font-size:.72rem;font-weight:700;color:var(--green)">Máxima Eficiência</div>
+            <div style="font-size:.62rem;color:var(--muted)">Ponta = 0 kWh</div>
+          </div>
+          <div style="margin-left:auto;font-size:1rem">✅</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.7rem;padding:.45rem .6rem;border-radius:9px;
+          background:rgba(0,188,212,0.07);border:1px solid rgba(0,188,212,0.14)">
+          <div style="font-size:2rem;font-weight:900;color:var(--cyan);
+            text-shadow:0 0 15px rgba(0,188,212,0.5);min-width:28px;text-align:center;
+            font-family:'Exo 2','Segoe UI','Arial',sans-serif,'Segoe UI','Arial',sans-serif">5</div>
+          <div>
+            <div style="font-size:.72rem;font-weight:700;color:var(--cyan)">Otimizado</div>
+            <div style="font-size:.62rem;color:var(--muted)">Ponta abaixo da meta</div>
+          </div>
+          <div style="margin-left:auto;font-size:1rem">✅</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.7rem;padding:.45rem .6rem;border-radius:9px;
+          background:rgba(255,179,0,0.06);border:1px solid rgba(255,179,0,0.14)">
+          <div style="font-size:2rem;font-weight:900;color:var(--amber);
+            text-shadow:0 0 15px rgba(255,179,0,0.4);min-width:28px;text-align:center;
+            font-family:'Exo 2','Segoe UI','Arial',sans-serif,'Segoe UI','Arial',sans-serif">4</div>
+          <div>
+            <div style="font-size:.72rem;font-weight:700;color:var(--amber)">Desvio Operacional</div>
+            <div style="font-size:.62rem;color:var(--muted)">Ponta acima da meta</div>
+          </div>
+          <div style="margin-left:auto;font-size:1rem">⚠️</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:.7rem;padding:.45rem .6rem;border-radius:9px;
+          background:rgba(255,23,68,0.06);border:1px solid rgba(255,23,68,0.14)">
+          <div style="font-size:2rem;font-weight:900;color:var(--red);
+            text-shadow:0 0 15px rgba(255,23,68,0.4);min-width:28px;text-align:center;
+            font-family:'Exo 2','Segoe UI','Arial',sans-serif,'Segoe UI','Arial',sans-serif">1</div>
+          <div>
+            <div style="font-size:.72rem;font-weight:700;color:var(--red)">Alerta Operacional</div>
+            <div style="font-size:.62rem;color:var(--muted)">Ponta muito alta</div>
+          </div>
+          <div style="margin-left:auto;font-size:1rem">❌</div>
+        </div>
+        <!-- aproveitamento total -->
+        <div style="margin-top:.1rem;padding:.4rem .6rem;border-radius:8px;
+          background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.15);text-align:center">
+          <div style="font-size:.68rem;font-weight:800;color:var(--green)">
+            ✅ 12 / 17 dias com bom controle
+          </div>
+          <div style="height:5px;background:rgba(255,255,255,0.05);border-radius:3px;margin-top:.35rem;overflow:hidden">
+            <div id="bar-aproveit" style="height:100%;width:0%;border-radius:3px;
+              background:linear-gradient(90deg,var(--green),var(--cyan));
+              transition:width 1.8s ease 0.5s"></div>
+          </div>
+          <div style="font-size:.6rem;color:var(--muted);margin-top:.25rem">70,6% de aproveitamento</div>
+        </div>
+      </div>
+
+      <!-- GRÁFICO -->
+      <div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;
+        padding:.85rem 1.1rem;display:flex;flex-direction:column;position:relative;overflow:hidden">
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;
+          background:linear-gradient(90deg,transparent,var(--green) 40%,var(--cyan) 60%,transparent);opacity:.4"></div>
+        <div style="font-size:.65rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;
+          color:var(--muted);margin-bottom:.6rem;display:flex;align-items:center;justify-content:space-between">
+          <span><span style="color:var(--green)">📊</span> % Consumo na Ponta por Dia · Meta &lt; 9%</span>
+          <div style="display:flex;gap:.8rem;font-size:.6rem">
+            <span style="display:flex;align-items:center;gap:.3rem">
+              <span style="width:8px;height:8px;border-radius:2px;background:var(--green);display:inline-block"></span>Ponta Zero
+            </span>
+            <span style="display:flex;align-items:center;gap:.3rem">
+              <span style="width:8px;height:8px;border-radius:2px;background:var(--cyan);display:inline-block"></span>Abaixo meta
+            </span>
+            <span style="display:flex;align-items:center;gap:.3rem">
+              <span style="width:8px;height:8px;border-radius:2px;background:var(--amber);display:inline-block"></span>Desvio
+            </span>
+            <span style="display:flex;align-items:center;gap:.3rem">
+              <span style="width:8px;height:8px;border-radius:2px;background:var(--red);display:inline-block"></span>Alerta
+            </span>
+          </div>
+        </div>
+        <div style="flex:1;position:relative"><canvas id="chart1"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 2: TABELA DIÁRIA -->
+  <div class="view" id="v2">
+    <div class="card" style="flex:1;display:flex;flex-direction:column">
+      <div class="ctitle"><span>📋</span> Registro Diário · Controle de Horário de Ponta — 01 a 17/05/2026</div>
+      <div style="flex:1;overflow:auto">
+        <table>
+          <thead><tr>
+            <th>Data</th><th>Dia</th><th>Consumo Total</th>
+            <th>Ponta Real</th><th>% Ponta</th><th>Meta 9%</th>
+            <th>kWh Deslocado</th><th>Econ. Gerada</th><th>Status</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 3: GRÁFICO % PONTA + CARDS META -->
+  <div class="view" id="v3">
+    <div class="v3grid" style="flex:1">
+      <div class="card" style="display:flex;flex-direction:column">
+        <div class="ctitle"><span>🎯</span> % Consumo na Ponta por Dia · Meta: abaixo de 9%</div>
+        <div style="flex:1;position:relative"><canvas id="chart3"></canvas></div>
+      </div>
+      <div class="meta-cards">
+        <div class="mcard green">
+          <div class="ml">% Ponta Real Maio</div>
+          <div class="mv">5,54%</div>
+          <div class="ms">Meta: &lt; 9% · Superou em 3,46 p.p.</div>
+        </div>
+        <div class="mcard green">
+          <div class="ml">kWh Abaixo da Meta</div>
+          <div class="mv">6.697 kWh</div>
+          <div class="ms">17.397 meta − 10.700 real</div>
+        </div>
+        <div class="mcard green">
+          <div class="ml">Economia Gerada pela Equipe</div>
+          <div class="mv">R$ 8.894</div>
+          <div class="ms">6.697 kWh × R$ 1,359/kWh deslocado</div>
+        </div>
+        <div class="mcard amber">
+          <div class="ml">Melhor Dia Útil</div>
+          <div class="mv">14/05 · 5,6%</div>
+          <div class="ms">Quinta · 600 kWh ponta</div>
+        </div>
+        <div class="mcard red">
+          <div class="ml">Pior Dia · Atenção</div>
+          <div class="mv">11/05 · 12,8%</div>
+          <div class="ms">Segunda · 1.500 kWh ponta</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 4: RANKING POR PERFORMANCE -->
+  <div class="view" id="v4">
+    <div class="rank-grid" style="flex:1">
+      <div class="card" style="display:flex;flex-direction:column">
+        <div class="ctitle"><span>🥇</span> Melhores Dias · Menor % na Ponta (dias úteis)</div>
+        <div class="rank-list" id="rank-best" style="flex:1"></div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column">
+        <div class="ctitle"><span>⚠️</span> Dias com Desvio · Maior % na Ponta (dias úteis)</div>
+        <div class="rank-list" id="rank-worst" style="flex:1"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- NAV + PAUSE -->
+<div class="navdots">
+  <div class="dot active" onclick="goView(0)"></div>
+  <div class="dot" onclick="goView(1)"></div>
+  <div class="dot" onclick="goView(2)"></div>
+  <div class="dot" onclick="goView(3)"></div>
+  <button class="btn-pause" id="btnpause" onclick="togglePause()">
+    <span id="pico">⏸</span><span id="plbl">Pausar</span>
+  </button>
+</div>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-in">
+    ⚡ META: MANTER CONSUMO DE PONTA ABAIXO DE 9% DO TOTAL DIÁRIO &nbsp;·&nbsp;
+    🏆 RESULTADO MAIO (01–17): 5,54% — MELHOR RESULTADO DA HISTÓRIA &nbsp;·&nbsp;
+    💪 6.697 kWh DESLOCADOS DO HORÁRIO DE PONTA PELA EQUIPE &nbsp;·&nbsp;
+    💰 ECONOMIA GERADA PELA EQUIPE: R$ 8.894 (01–17/05) &nbsp;·&nbsp;
+    ✅ 12 DE 17 DIAS COM BOM CONTROLE · 7 DIAS COM PONTA ZERO &nbsp;·&nbsp;
+    ⚠ DIAS COM DESVIO: 04/05, 07/05, 08/05, 13/05 · ALERTA: 11/05 &nbsp;·&nbsp;
+    🎯 HORÁRIO DE PONTA: 18h–21h · DESLIGUE CARGAS NÃO ESSENCIAIS &nbsp;·&nbsp;&nbsp;&nbsp;
+  </div>
+</div>
+
+</div>
+
+<script>
+// ══ DADOS ══
+const DIAS = [
+  {d:"01/05",dia:"Sex (Feriado)",kwh:13800,ponta:0,   desl:1231,ep:1673,st:"max"},
+  {d:"02/05",dia:"Sábado",       kwh:13200,ponta:0,   desl:1178,ep:1600,st:"max"},
+  {d:"03/05",dia:"Domingo",      kwh:7200, ponta:0,   desl:642, ep:873, st:"max"},
+  {d:"04/05",dia:"Segunda",      kwh:12900,ponta:1300,desl:-149,ep:-202,st:"desvio"},
+  {d:"05/05",dia:"Terça",        kwh:12300,ponta:900, desl:197, ep:268, st:"otim"},
+  {d:"06/05",dia:"Quarta",       kwh:11300,ponta:900, desl:108, ep:147, st:"otim"},
+  {d:"07/05",dia:"Quinta",       kwh:13700,ponta:1300,desl:-78, ep:-106,st:"desvio"},
+  {d:"08/05",dia:"Sexta",        kwh:11200,ponta:1200,desl:-201,ep:-273,st:"desvio"},
+  {d:"09/05",dia:"Sábado",       kwh:11500,ponta:0,   desl:1026,ep:1394,st:"max"},
+  {d:"10/05",dia:"Domingo",      kwh:7300, ponta:0,   desl:651, ep:885, st:"max"},
+  {d:"11/05",dia:"Segunda",      kwh:11700,ponta:1500,desl:-456,ep:-620,st:"alerta"},
+  {d:"12/05",dia:"Terça",        kwh:10600,ponta:800, desl:146, ep:198, st:"otim"},
+  {d:"13/05",dia:"Quarta",       kwh:14600,ponta:1400,desl:-97, ep:-132,st:"desvio"},
+  {d:"14/05",dia:"Quinta",       kwh:10700,ponta:600, desl:355, ep:482, st:"otim"},
+  {d:"15/05",dia:"Sexta",        kwh:13000,ponta:800, desl:360, ep:489, st:"otim"},
+  {d:"16/05",dia:"Sábado",       kwh:11900,ponta:0,   desl:1062,ep:1443,st:"max"},
+  {d:"17/05",dia:"Domingo",      kwh:6400, ponta:0,   desl:571, ep:776, st:"max"},
+];
+const META = 9; // %
+const CORES = {max:'#00e676',otim:'#00bcd4',desvio:'#ffb300',alerta:'#ff1744'};
+const LABELS = {max:'Máx. Eficiência',otim:'Otimizado',desvio:'Desvio Operacional',alerta:'Alerta Operacional'};
+const fmt = n => n.toLocaleString('pt-BR');
+const fmtR = n => n<0 ? '− R$ '+fmt(Math.abs(n)) : 'R$ '+fmt(n);
+
+// ══ RELÓGIO ══
+function tick(){
+  const n=new Date();
+  document.getElementById('clock').textContent=
+    String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+  const ds=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const ms=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  document.getElementById('datedisp').innerHTML=
+    ds[n.getDay()]+', '+n.getDate()+' '+ms[n.getMonth()]+' '+n.getFullYear()+'<br>Controle de Ponta';
+}
+setInterval(tick,1000);tick();
+
+// ══ COUNT UP ══
+function countUp(el){
+  const tgt=parseInt(el.dataset.target),suf=el.dataset.suffix||'';
+  const inc=tgt/110;let cur=0;
+  const t=setInterval(()=>{cur=Math.min(cur+inc,tgt);
+    el.textContent=fmt(Math.round(cur))+suf;if(cur>=tgt)clearInterval(t);},16);
+}
+
+// ══ TABELA ══
+function buildTable(){
+  const tb=document.getElementById('tbody');tb.innerHTML='';
+  DIAS.forEach((d,i)=>{
+    const pct=d.kwh>0?(d.ponta/d.kwh*100):0;
+    const meta=Math.round(d.kwh*0.09);
+    const pctC = pct<=5?'var(--green)':pct<=9?'var(--cyan)':pct<=12?'var(--amber)':'var(--red)';
+    const epC = d.ep>=0?'var(--green)':'var(--red)';
+    const deslC = d.desl>=0?'var(--green)':'var(--red)';
+    const tr=document.createElement('tr');
+    tr.style.animationDelay=(i*.04)+'s';
+    tr.innerHTML=`
+      <td>${d.d}</td>
+      <td>${d.dia}</td>
+      <td class="vn" style="color:var(--cyan)">${fmt(d.kwh)} kWh</td>
+      <td class="vn" style="color:${d.ponta===0?'var(--green)':'var(--amber)'}">${fmt(d.ponta)} kWh</td>
+      <td class="vn" style="color:${pctC}">${pct.toFixed(2)}%</td>
+      <td class="vn" style="color:var(--muted)">${fmt(meta)} kWh</td>
+      <td class="vn" style="color:${deslC}">${d.desl>=0?'+':''}${fmt(d.desl)} kWh</td>
+      <td class="vn" style="color:${epC}">${fmtR(d.ep)}</td>
+      <td><span class="bdg ${d.st}">${LABELS[d.st]}</span></td>`;
+    tb.appendChild(tr);
+  });
+  const tr2=document.createElement('tr');tr2.className='trow';
+  tr2.innerHTML=`<td colspan="2">TOTAL 01–17/05</td>
+    <td>193.300 kWh</td><td>10.700 kWh</td><td>5,54%</td><td>17.397 kWh</td>
+    <td style="color:var(--green)">+6.697 kWh</td>
+    <td style="color:var(--green)">R$ 8.894</td>
+    <td><span style="font-size:.7rem;color:var(--green);font-weight:800">🏆 RECORDE</span></td>`;
+  tb.appendChild(tr2);
+}
+
+// ══ CHART 1 — % ponta por dia ══
+let c1,c3;
+function buildChart1(){
+  const ctx=document.getElementById('chart1');if(!ctx)return;
+  if(c1)c1.destroy();
+  const pcts=DIAS.map(d=>d.kwh>0?+(d.ponta/d.kwh*100).toFixed(2):0);
+  const bgColors=pcts.map(p=>p===0?'rgba(0,230,118,0.55)':p<=9?'rgba(0,188,212,0.55)':p<=12?'rgba(255,179,0,0.65)':'rgba(255,23,68,0.7)');
+  const bdColors=pcts.map(p=>p===0?'#00e676':p<=9?'#00bcd4':p<=12?'#ffb300':'#ff1744');
+  c1=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:DIAS.map(d=>d.d),
+      datasets:[
+        {
+          label:'% Ponta Real',
+          data:pcts,
+          backgroundColor:bgColors,
+          borderColor:bdColors,
+          borderWidth:1.5,borderRadius:4,
+        },
+        {
+          label:'Meta 9%',
+          data:DIAS.map(()=>9),
+          type:'line',
+          borderColor:'rgba(255,255,255,0.3)',
+          borderWidth:1.5,borderDash:[6,4],
+          pointRadius:0,fill:false,
+          yAxisID:'y',
+        }
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      animation:{duration:1100,easing:'easeOutQuart'},
+      plugins:{
+        legend:{labels:{color:'rgba(224,234,248,0.65)',font:{family:"'Exo 2'",size:11},boxWidth:12}},
+        tooltip:{
+          backgroundColor:'rgba(7,13,24,0.95)',borderColor:'rgba(0,230,118,0.25)',borderWidth:1,
+          titleColor:'#e0eaf8',bodyColor:'#546e8a',
+          callbacks:{label:c=>' '+c.dataset.label+': '+
+            (typeof c.parsed.y==='number'?c.parsed.y.toFixed(2)+'%':c.parsed.y)}
+        }
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'rgba(224,234,248,0.55)',font:{size:9}}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},
+          ticks:{color:'rgba(224,234,248,0.55)',font:{size:10},callback:v=>v+'%'},
+          max:15,
+          title:{display:true,text:'% na Ponta',color:'rgba(224,234,248,0.3)',font:{size:10}}}
+      }
+    }
+  });
+}
+
+// ══ CHART 3 — % ponta linha ══
+function buildChart3(){
+  const ctx=document.getElementById('chart3');if(!ctx)return;
+  if(c3)c3.destroy();
+  const pcts=DIAS.map(d=>d.kwh>0?+(d.ponta/d.kwh*100).toFixed(2):null);
+  c3=new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:DIAS.map(d=>d.d),
+      datasets:[
+        {
+          label:'% Ponta Real',
+          data:pcts,
+          borderColor:'#00bcd4',
+          backgroundColor:'rgba(0,188,212,0.08)',
+          borderWidth:2.5,fill:true,tension:.4,
+          pointBackgroundColor:pcts.map(p=>p===null||p===0?'#00e676':p<=9?'#00bcd4':p<=12?'#ffb300':'#ff1744'),
+          pointBorderColor:'#060a0f',pointBorderWidth:2,pointRadius:5,
+          spanGaps:false,
+        },
+        {
+          label:'Meta 9%',
+          data:DIAS.map(()=>9),
+          borderColor:'rgba(255,255,255,0.25)',
+          borderWidth:1.5,borderDash:[7,5],
+          pointRadius:0,fill:false,
+        },
+        {
+          label:'Zona Crítica 12%',
+          data:DIAS.map(()=>12),
+          borderColor:'rgba(255,23,68,0.2)',
+          borderWidth:1,borderDash:[4,6],
+          pointRadius:0,fill:false,
+        }
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      animation:{duration:1300,easing:'easeOutQuart'},
+      plugins:{
+        legend:{labels:{color:'rgba(224,234,248,0.65)',font:{family:"'Exo 2'",size:11},boxWidth:12}},
+        tooltip:{
+          backgroundColor:'rgba(7,13,24,0.95)',borderColor:'rgba(0,188,212,0.25)',borderWidth:1,
+          titleColor:'#e0eaf8',bodyColor:'#546e8a',
+          callbacks:{label:c=>c.parsed.y!==null?' '+c.dataset.label+': '+c.parsed.y+'%':''}
+        }
+      },
+      scales:{
+        x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'rgba(224,234,248,0.55)',font:{size:9}}},
+        y:{grid:{color:'rgba(255,255,255,0.04)'},
+          ticks:{color:'rgba(224,234,248,0.55)',font:{size:10},callback:v=>v+'%'},
+          max:16,
+          title:{display:true,text:'% Consumo na Ponta',color:'rgba(224,234,248,0.3)',font:{size:10}}}
+      }
+    }
+  });
+}
+
+// ══ RANKING ══
+function buildRanking(){
+  const uteis=DIAS.filter(d=>d.ponta>0||d.st==='desvio'||d.st==='alerta'||d.st==='otim');
+  const sorted=uteis.slice().sort(function(a,b){return (a.ponta/a.kwh)-(b.ponta/b.kwh);});
+  const best=sorted.slice(0,8);
+  const worst=uteis.slice().sort(function(a,b){return (b.ponta/b.kwh)-(a.ponta/a.kwh);}).slice(0,8);
+
+  function render(list,elId,isWorst){
+    const el=document.getElementById(elId);el.innerHTML='';
+    const maxPonta=Math.max.apply(null,list.map(function(d){return d.ponta;}));
+    list.forEach((d,i)=>{
+      const pct=+(d.ponta/d.kwh*100).toFixed(1);
+      const barW=maxPonta>0?(d.ponta/maxPonta*85):0;
+      const col=pct<=6?'#00e676':pct<=9?'#00bcd4':pct<=12?'#ffb300':'#ff1744';
+      const item=document.createElement('div');
+      item.className='ritem';item.style.animationDelay=(i*.05)+'s';
+      item.innerHTML=`
+        <span class="rnum" style="color:${col}">${i+1}</span>
+        <span class="rdate">${d.d}</span>
+        <span class="rday">${d.dia}</span>
+        <span class="rponta" style="color:${col}">${fmt(d.ponta)} kWh</span>
+        <div class="rbar"><div class="rbarfill" style="width:0%;background:${col}" data-w="${barW}"></div></div>
+        <span class="rpct" style="color:${col}">${pct}%</span>
+        <span class="bdg ${d.st}" style="font-size:.58rem;padding:.1rem .4rem">${LABELS[d.st].split(' ')[0]}</span>`;
+      el.appendChild(item);
+    });
+    setTimeout(()=>{
+      el.querySelectorAll('.rbarfill').forEach(b=>b.style.width=b.dataset.w+'%');
+    },300);
+  }
+  render(best,'rank-best',false);
+  render(worst,'rank-worst',true);
+}
+
+// ══ NAVEGAÇÃO ══
+const VIEWS=['v1','v2','v3','v4'];
+let cur=0,pgTimer,autoT,isPaused=false,pausedEl=0;
+const DUR=13000;
+
+function togglePause(){
+  isPaused=!isPaused;
+  const btn=document.getElementById('btnpause');
+  const ico=document.getElementById('pico');
+  const lbl=document.getElementById('plbl');
+  const bar=document.getElementById('pgfill');
+  if(isPaused){
+    pausedEl=Date.now()-pgStart;
+    clearInterval(pgTimer);clearTimeout(autoT);
+    bar.style.transition='none';
+    btn.classList.add('paused');ico.textContent='▶';lbl.textContent='Retomar';
+    document.querySelector('.ticker-in').style.animationPlayState='paused';
+  } else {
+    btn.classList.remove('paused');ico.textContent='⏸';lbl.textContent='Pausar';
+    document.querySelector('.ticker-in').style.animationPlayState='running';
+    pgStart=Date.now()-pausedEl;
+    bar.style.transition='width .1s linear';
+    const rem=DUR-pausedEl;
+    pgTimer=setInterval(()=>{
+      const p=Math.min((Date.now()-pgStart)/DUR*100,100);
+      bar.style.width=p+'%';
+    },60);
+    autoT=setTimeout(()=>goView(cur+1,true),rem);
+  }
+}
+
+let pgStart;
+function goView(idx,fromAuto){
+  if(isPaused&&fromAuto)return;
+  VIEWS.forEach((id,i)=>{
+    document.getElementById(id).classList.remove('active');
+    document.querySelectorAll('.dot')[i].classList.remove('active');
+  });
+  cur=(idx+VIEWS.length)%VIEWS.length;
+  document.getElementById(VIEWS[cur]).classList.add('active');
+  document.querySelectorAll('.dot')[cur].classList.add('active');
+  if(cur===0){
+    document.querySelectorAll('.count-up').forEach(e=>{e.textContent='0';countUp(e);});
+    setTimeout(buildChart1,200);
+    // barra real vs meta: 10700/17397 = 61.5%
+    setTimeout(()=>{
+      const b=document.getElementById('bar-real');
+      if(b) b.style.width='61.5%';
+      const ba=document.getElementById('bar-aproveit');
+      if(ba) ba.style.width='70.6%';
+    },400);
+  }
+  if(cur===1)buildTable();
+  if(cur===2)setTimeout(buildChart3,200);
+  if(cur===3)buildRanking();
+  if(isPaused){pausedEl=0;document.getElementById('pgfill').style.width='0%';return;}
+  startPg();
+}
+
+function startPg(){
+  clearInterval(pgTimer);clearTimeout(autoT);
+  const bar=document.getElementById('pgfill');
+  bar.style.transition='width .1s linear';bar.style.width='0%';
+  pgStart=Date.now();
+  pgTimer=setInterval(()=>{
+    const p=Math.min((Date.now()-pgStart)/DUR*100,100);bar.style.width=p+'%';
+  },60);
+  autoT=setTimeout(()=>goView(cur+1,true),DUR);
+}
+
+// ══ PARTICLES ══
+function spark(){
+  const p=document.createElement('div');p.className='pt';
+  const s=1.5+Math.random()*2.5;
+  p.style.cssText=`width:${s}px;height:${s}px;left:${Math.random()*100}vw;bottom:-8px;
+    background:${Math.random()>.5?'var(--green)':'var(--cyan)'};
+    animation-duration:${9+Math.random()*10}s;animation-delay:${Math.random()*2}s`;
+  document.body.appendChild(p);setTimeout(()=>p.remove(),22000);
+}
+setInterval(spark,1400);
+
+// ══ INIT ══
+window.addEventListener('load',()=>{buildTable();goView(0);});
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight')goView(cur+1);
+  if(e.key==='ArrowLeft')goView(cur-1);
+  if(e.key===' ')togglePause();
+  if(e.key>='1'&&e.key<='4')goView(parseInt(e.key)-1);
+});
+</script>
+</body>
+</html>
